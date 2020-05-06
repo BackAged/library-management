@@ -1,5 +1,5 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
-github.com/BackAged/library-management v0.0.0-20200505132550-e29d303094a3 h1:FznVfzri1cPd7mlq9xZCS04YKo0TLfsO9DX4SsVhPi4=
+github.com/BackAged/library-management v0.0.0-20200506161444-914e1caa303d h1:XwvZqfY9m9g0cCld5bXR/jX454uvreH/m4pk4eB+JH8=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=

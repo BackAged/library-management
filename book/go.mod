@@ -1,4 +1,4 @@
-module github.com/BackAged/library-mangement
+module github.com/BackAged/library-mangement/book
 
 go 1.14
 
