@@ -8,6 +8,7 @@ export interface RegisterUserUseCaseRequest {
     gender: string,
     email: string,
     phone?: string,
+    password: string,
 }
 
 // kinda like DTO
@@ -44,7 +45,7 @@ export class RegisterUserUseCase {
         }
     }
 
-    public async createUser(userData: RegisterUserUseCaseRequest) {
+    public async execute(userData: RegisterUserUseCaseRequest) {
         // TODO:-> duplicate email checking
         const user = await this.createUserRepo.createUser(
             User.NewUser(userData),
