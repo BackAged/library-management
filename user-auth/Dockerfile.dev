@@ -3,11 +3,9 @@ FROM node:10-slim
 
 WORKDIR /server
 
-#COPY package.json .
+COPY . .
 
 RUN yarn install
-
-#COPY . /server
 
 EXPOSE 3000
 CMD [ "yarn", "dev" ]
