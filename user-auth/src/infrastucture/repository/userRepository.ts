@@ -22,6 +22,7 @@ export default class UserRepository implements CreateUser, GetUser, DeleteUser {
             gender: String(user.gender),
             email: user.email,
             phone: user.phone,
+            password: user.password,
         }
     }
 
