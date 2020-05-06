@@ -4,6 +4,7 @@ import {
     RegisterUserUseCase, RegisterUserUseCaseRequest, RegisterUserUseCaseResponse 
 } from "../../../usecase/registerUser/registerUserUseCase";
 import { Gender } from "../../../entity/user";
+import { EmailAlreadyExist } from "../../../usecase/registerUser/errors";
 
 export class RegisterUserController {
     private registerUserUseCase: RegisterUserUseCase;
@@ -29,7 +30,10 @@ export class RegisterUserController {
 
         const { error } = schema.validate(req.body, { abortEarly: false });
         if (error) {
-            return res.status(400).send({message: "Please fill up with valid data in all the required fields."});
+            return res.status(400).send({
+                message: "Please fill up with valid data in all the required fields.",
+                errors: error.details,
+            });
         }
 
         try {
@@ -47,6 +51,10 @@ export class RegisterUserController {
             return res.status(200).send(this.seralize(response));
         } catch(e) {
             console.log(e)
+            if (e instanceof EmailAlreadyExist) {
+                return res.status(400).send({message: e.message});
+            }
+            
             return res.status(500).send({message: "Something went Wrong"});
         }
        

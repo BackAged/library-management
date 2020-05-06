@@ -6,6 +6,8 @@ import { initializeDBConnection } from "../../infrastucture/database/mongo";
 import { newJsonWebTokenManager } from "../../infrastucture/json-web-token/json-web-token";
 import { newUserRepository } from "../../infrastucture/repository/userRepository";
 import { newRegisterUserUseCase } from "../../usecase/registerUser/registerUserUseCase";
+import { newLoginUserUseCase } from "../../usecase/loginUser/loginUserUseCase";
+import { newLoginUserController } from "./controller/loginUserController";
 import { newRegisterUserController } from "./controller/registerUserController";
 
 import config from "../../configuration";
@@ -30,16 +32,18 @@ app.use(bodyParser.urlencoded({ extended: true }));
     // initializing usecases
     const jsonWebTokenManager = await newJsonWebTokenManager();
     const registerUserUseCase = await newRegisterUserUseCase(userRepository, jsonWebTokenManager);
+    const loginUserUseCase = await newLoginUserUseCase(userRepository, jsonWebTokenManager);
 
     // initializing controllers
     const registerUserController = await newRegisterUserController(registerUserUseCase);
+    const loginUserController = await newLoginUserController(loginUserUseCase);
 
     //initialize routers
     const authRouter = Router();
-    authRouter.post("/auth/register", registerUserController.registerUser);
-    auth
+    authRouter.post("/register", registerUserController.registerUser);
+    authRouter.post("/login", loginUserController.LoginUser);
 
-    app.use("/api/v1", authRouter);
+    app.use("/api/v1/auth", authRouter);
 
 })();
 

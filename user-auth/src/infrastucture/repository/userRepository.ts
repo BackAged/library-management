@@ -1,11 +1,11 @@
-import { CreateUser } from "../../usecase/registerUser/port";
+import { CreateUser, RegisterUserContext } from "../../usecase/registerUser/port";
 import { GetUser } from "../../usecase/getUser/getUser";
 import { DeleteUser } from "../../usecase/deleteUser/deleteUser";
 import { User } from "../../entity/user";
 import { DBInterface } from "../database/db";
 import { ObjectID } from "mongodb";
 
-export default class UserRepository implements CreateUser, GetUser, DeleteUser {
+export default class UserRepository implements RegisterUserContext, GetUser, DeleteUser {
     private db: DBInterface;
     private collection: string;
     
@@ -27,17 +27,23 @@ export default class UserRepository implements CreateUser, GetUser, DeleteUser {
     }
 
     private toModel(user: any) {
-        return User.NewUser(user);
+        return User.FromUser(user);
     }
 
     public async createUser(user: User): Promise<User> {
-        const ID = await this.db.create(this.collection, this.toPersistence(user))
+        const ID = await this.db.create(this.collection, this.toPersistence(user));
         user.ID = ID as unknown as string;
         return user;
     }
 
     public async getUser(userID: string): Promise<User | null> {
-        return await this.db.findOne(this.collection, {_id: new ObjectID(userID)})
+        const dbUser = await this.db.findOne(this.collection, {_id: new ObjectID(userID)});
+        return this.toModel(dbUser);
+    }
+
+    public async getUserByEmail(email: string): Promise<User | null> {
+        const dbUser =  await this.db.findOne(this.collection, {email});
+        return this.toModel(dbUser);
     }
 
     public async deleteUser(userID: string): Promise<void> {

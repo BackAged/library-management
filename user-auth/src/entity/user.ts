@@ -63,12 +63,16 @@ export class User {
         return errors;
     }
 
+    public static FromUser(userData: UserProps): User {
+        return new User(userData);
+    }
+
     public static NewUser(userData: UserProps): User {
         const errors = this.isValid(userData);
         if (errors.length !== 0) {
-            throw new Error("Invalid data")
+            throw new Error("Invalid User")
         }
-        
+    
         userData.password = this.hasPassword(userData.password);
 
         return new User(userData);
@@ -103,7 +107,7 @@ export class User {
     }
 
     get password(): string {
-        return this.password;
+        return this._password;
     }
 
     private static hasPassword(plainPassword: string): string{

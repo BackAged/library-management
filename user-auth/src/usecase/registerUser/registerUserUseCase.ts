@@ -1,7 +1,7 @@
-import { CreateUser, GenerateJSONWebToken } from "./port";
+import { GenerateJSONWebToken, RegisterUserContext } from "./port";
 import { User } from "../../entity/user";
+import { EmailAlreadyExist } from "./errors";
 
-// kinda like DTO
 export interface RegisterUserUseCaseRequest {
     name: string,
     age: number,
@@ -11,7 +11,6 @@ export interface RegisterUserUseCaseRequest {
     password: string,
 }
 
-// kinda like DTO
 export interface RegisterUserUseCaseResponse {
     user: {
         name: string,
@@ -24,11 +23,11 @@ export interface RegisterUserUseCaseResponse {
 }
 
 export class RegisterUserUseCase {
-    private createUserRepo: CreateUser;
+    private userRepo: RegisterUserContext;
     private jsonWebTokenGenerator: GenerateJSONWebToken;
 
-    constructor(createUserRepo: CreateUser, jsonWebTokenGenerator: GenerateJSONWebToken) {
-        this.createUserRepo = createUserRepo;
+    constructor(userRepo: RegisterUserContext, jsonWebTokenGenerator: GenerateJSONWebToken) {
+        this.userRepo = userRepo;
         this.jsonWebTokenGenerator = jsonWebTokenGenerator;
     }
 
@@ -46,17 +45,22 @@ export class RegisterUserUseCase {
     }
 
     public async execute(userData: RegisterUserUseCaseRequest) {
-        // TODO:-> duplicate email checking
-        const user = await this.createUserRepo.createUser(
+        const existingUser = await this.userRepo.getUserByEmail(userData.email);
+        if (existingUser) {
+            console.log(existingUser);
+            throw new EmailAlreadyExist("This email already exists");
+        }
+
+        const user = await this.userRepo.createUser(
             User.NewUser(userData),
         );
 
-        const token = await this.jsonWebTokenGenerator.generateJSONWebTOken(user);
+        const token = await this.jsonWebTokenGenerator.generateJSONWebTOken({id: user.ID, email: user.email});
 
         return this.toCreateUserUseCaseResponse(user, token);
     }
 }
 
-export const newRegisterUserUseCase = (createUserRepo: CreateUser, jsonWebTokenGenerator: GenerateJSONWebToken) => {
-    return new RegisterUserUseCase(createUserRepo, jsonWebTokenGenerator);
+export const newRegisterUserUseCase = (userRepo: RegisterUserContext, jsonWebTokenGenerator: GenerateJSONWebToken) => {
+    return new RegisterUserUseCase(userRepo, jsonWebTokenGenerator);
 }

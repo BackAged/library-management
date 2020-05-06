@@ -52,7 +52,7 @@ export class LoginUserUseCase {
             throw new PasswardMisMatch("Password didn't match");
         }
 
-        const token = await this.jsonWebTokenGenerator.generateJSONWebTOken(user);
+        const token = await this.jsonWebTokenGenerator.generateJSONWebTOken({id: user.ID, email: user.email});
 
         return this.toCreateUserUseCaseResponse(user, token);
     }
