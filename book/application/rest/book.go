@@ -2,106 +2,65 @@ package rest
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
-	"github.com/BackAged/library-management/domain/task"
+	"github.com/BackAged/library-management/domain/book"
 	"github.com/go-chi/chi"
 )
 
-// TaskRouter contains all routes for albums service.
-func TaskRouter(h Handler) http.Handler {
+// BookRouter contains all routes for albums service.
+func BookRouter(h BookHandler) http.Handler {
 	router := chi.NewRouter()
-
-	router.Get("/{id}", h.Get)
 	router.Post("/create", h.Create)
-	router.Get("/user/{userid}", h.GetUserTask)
 
 	return router
 }
 
-// Handler interface for the task handlers.
-type Handler interface {
+// BookHandler interface for the Book handlers.
+type BookHandler interface {
 	Create(http.ResponseWriter, *http.Request)
-	Get(http.ResponseWriter, *http.Request)
-	GetUserTask(http.ResponseWriter, *http.Request)
 }
 
-type handler struct {
-	tskSvc task.Service
+type bkHandler struct {
+	bkSvc book.Service
 }
 
-// NewHandler will instantiate the handler
-func NewHandler(tskSvc task.Service) Handler {
-	return &handler{tskSvc: tskSvc}
+// NewBookHandler will instantiate the handler
+func NewBookHandler(tskSvc book.Service) BookHandler {
+	return &bkHandler{bkSvc: tskSvc}
 }
 
 type createDTO struct {
-	UserID      string          `json:"userID"`
-	Topic       string          `json:"topic"`
-	Description string          `json:"description"`
-	Status      string          `json:"status"`
-	SubTasks    []*task.SubTask `json:"sub_task"`
+	Title       string `json:"title"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+	AuthorID    string `json:"author_id"`
 }
 
 // Create handler
-func (h *handler) Create(w http.ResponseWriter, r *http.Request) {
+func (h *bkHandler) Create(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
+	fmt.Println("shit")
 	tskDTO := &createDTO{}
 	if err := json.NewDecoder(r.Body).Decode(&tskDTO); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	}
 
-	tsk := &task.Task{
-		UserID:      tskDTO.UserID,
-		Topic:       tskDTO.Topic,
+	tsk := &book.Book{
+		Title:       tskDTO.Title,
+		Category:    tskDTO.Category,
 		Description: tskDTO.Description,
-		Status:      task.Status(tskDTO.Status),
-		SubTasks:    tskDTO.SubTasks,
+		AuthorID:    tskDTO.AuthorID,
 	}
 
-	if err := h.tskSvc.Create(r.Context(), tsk); err != nil {
+	fmt.Println(tsk)
+
+	if err := h.bkSvc.Create(r.Context(), tsk); err != nil {
+		fmt.Println(err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
+	fmt.Println(tsk)
 	json.NewEncoder(w).Encode(tsk.ID)
-}
-
-// Get handler
-func (h *handler) Get(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	tskID := chi.URLParam(r, "id")
-	tsk, err := h.tskSvc.Get(r.Context(), tskID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if tsk == nil {
-		http.Error(w, "Notfound", http.StatusNotFound)
-		return
-	}
-
-	json.NewEncoder(w).Encode(tsk)
-
-}
-
-// GetUserTask handler
-func (h *handler) GetUserTask(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-
-	usrID := chi.URLParam(r, "userid")
-	tsk, err := h.tskSvc.GetUserTask(r.Context(), usrID)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if tsk == nil {
-		http.Error(w, "Notfound", http.StatusNotFound)
-		return
-	}
-
-	json.NewEncoder(w).Encode(tsk)
 }

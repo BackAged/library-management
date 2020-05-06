@@ -27,5 +27,4 @@ var cfgPath string
 func init() {
 	// register sub-commands here
 	rootCmd.AddCommand(serveRestCmd)
-	rootCmd.AddCommand(serveGrpcCmd)
 }

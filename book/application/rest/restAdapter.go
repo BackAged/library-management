@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/BackAged/library-management/configuration"
-	"github.com/BackAged/library-management/domain/task"
+	"github.com/BackAged/library-management/domain/book"
 	"github.com/BackAged/library-management/infrastructure/database"
 	"github.com/BackAged/library-management/infrastructure/repository"
 	"github.com/go-chi/chi"
@@ -23,17 +23,17 @@ func Serve(cfgPath string) error {
 		return err
 	}
 
-	rds, err := database.NewInMemoryClient(cfg.Redis.Host, cfg.Redis.Password, &cfg.Redis.DB)
+	rds, err := database.NewClient(cfg.Mongo.URI, cfg.Mongo.Database)
 	if err != nil {
 		return err
 	}
 
-	tskRepo := repository.NewTaskRepository(rds)
-	tskSvc := task.NewService(tskRepo)
-	tskHndlr := NewHandler(tskSvc)
+	tskRepo := repository.NewBookRepository(rds, "books")
+	tskSvc := book.NewService(tskRepo)
+	tskHndlr := NewBookHandler(tskSvc)
 
 	r := chi.NewRouter()
-	r.Mount("/api/v1/task", TaskRouter(tskHndlr))
+	r.Mount("/api/v1/book", BookRouter(tskHndlr))
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	srv := &http.Server{
