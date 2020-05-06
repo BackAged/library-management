@@ -1,3 +1,5 @@
+import bcrypt from "bcrypt";
+
 export enum Gender {
     Male = "Male",
     Female = "Female",
@@ -11,6 +13,7 @@ interface UserProps {
     gender: string; 
     email:string; 
     phone?: string;
+    password: string;
 }
 
 
@@ -21,6 +24,7 @@ export class User {
     private _gender: Gender
     private _email: string;
     private _phone?: string;
+    private _password: string;
 
     private constructor(userData: UserProps) {
         this._name = userData.name;
@@ -28,6 +32,7 @@ export class User {
         this._gender = userData.gender as Gender;
         this._email = userData.email;
         this._phone = userData.phone;
+        this._password = userData.password;
         this._ID = userData.ID;
     }
 
@@ -49,6 +54,10 @@ export class User {
         if (!userData.email) { //TODO-> email validation
             errors.push("Invalid email");
         }
+
+        if (!userData.password || userData.password.length <= 2 || userData.password.length >= 10) {
+            errors.push("Invalid password");
+        }
         
         console.log(errors);
         return errors;
@@ -59,6 +68,8 @@ export class User {
         if (errors.length !== 0) {
             throw new Error("Invalid data")
         }
+        
+        userData.password = this.hasPassword(userData.password);
 
         return new User(userData);
     }
@@ -89,6 +100,18 @@ export class User {
 
     get phone(): string | undefined {
         return this._phone;
+    }
+
+    get password(): string {
+        return this.password;
+    }
+
+    private static hasPassword(plainPassword: string): string{
+        return bcrypt.hashSync(plainPassword, 10);
+    }
+
+    public async matchPassword(plainPassword: string): Promise<boolean>{
+        return await bcrypt.compare(plainPassword, this.password);
     }
 }
 
