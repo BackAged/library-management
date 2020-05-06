@@ -1,0 +1,71 @@
+version: "3"
+services:
+  api-gateway:
+    container_name: api-gateway
+    build:
+      dockerfile: Dockerfile.dev
+      context: .
+    depends_on:
+      - mongo
+      - redis
+      - mq
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/server
+    environment:
+      - MONGO_HOST=mongodb://db:27017
+      - RABBIT_HOST=amqp://root:root@mq:5672
+      - MONGO_DB=wheel_reward
+      - APPLICATION_SERVER_PORT=3000
+      - APP_FORCE_SHUTDOWN_SECOND=30
+      - API_KEY=abcd
+      #- DATABASE_URL=mysql://tbbd:mEY6HsHGeAI6pwBPVJxQ@stg-sharetrip-db.sharetrip.net:3306/sharetrip
+      - MYSQL_HOST=stg-sharetrip.cfxqwb60q4jl.ap-southeast-1.rds.amazonaws.com
+      - MYSQL_USER=tbbd
+      - MYSQL_PASSWORD=mEY6HsHGeAI6pwBPVJxQ
+      - MYSQL_DATABASE=sharetrip
+
+  user-auth:
+    container_name: library-management-user-auth
+    build: 
+        dockerfile: Dockerfile
+        context: ./user-auth
+    depends_on: 
+        - mongo
+    ports:
+      - "30001:30001"
+    environment: 
+      - MONGO_HOST=mongodb://mongo:27017
+      - MONGO_DB=user_auth
+      - APPLICATION_SERVER_PORT=30001
+      - APP_FORCE_SHUTDOWN_SECOND=30
+
+  # mongo Server
+  mongo:
+    container_name: library-management-mongo
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./data:/data/db
+
+  # redis server
+  redis:
+    container_name: library-management-redis
+    image: "redis:alpine"
+    restart: always
+    ports: 
+      - "6379:6379"
+
+  # rabbitmq server Server
+  mq:
+    container_name: container_name: library-management-rabbitmq
+    image: 'rabbitmq:3.6-management-alpine'
+    environment:
+        RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
+        RABBITMQ_DEFAULT_USER: root
+        RABBITMQ_DEFAULT_PASS: root
+    ports:
+      - "5672:5672"
+      - "15672:15672"
