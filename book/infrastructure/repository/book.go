@@ -5,8 +5,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/BackAged/library-management/domain/book"
-	"github.com/BackAged/library-management/infrastructure/database"
+	"github.com/BackAged/library-management/book/domain/book"
+	"github.com/BackAged/library-management/book/infrastructure/database"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 

@@ -9,10 +9,10 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/BackAged/library-management/configuration"
-	"github.com/BackAged/library-management/domain/book"
-	"github.com/BackAged/library-management/infrastructure/database"
-	"github.com/BackAged/library-management/infrastructure/repository"
+	"github.com/BackAged/library-management/book/configuration"
+	"github.com/BackAged/library-management/book/domain/book"
+	"github.com/BackAged/library-management/book/infrastructure/database"
+	"github.com/BackAged/library-management/book/infrastructure/repository"
 	"github.com/go-chi/chi"
 )
 

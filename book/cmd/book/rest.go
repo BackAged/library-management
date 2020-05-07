@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/BackAged/library-management/application/rest"
+	"github.com/BackAged/library-management/book/application/rest"
 	"github.com/spf13/cobra"
 )
 

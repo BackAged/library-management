@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/BackAged/library-management/domain/book"
+	"github.com/BackAged/library-management/book/domain/book"
 	"github.com/go-chi/chi"
 )
 
