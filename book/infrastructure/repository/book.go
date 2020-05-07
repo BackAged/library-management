@@ -12,14 +12,16 @@ import (
 
 // BsonBook defines bson book
 type bsonBook struct {
-	ID          primitive.ObjectID `json:"ID"`
-	Title       string             `json:"Title"`
-	Category    string             `json:"category"`
-	Description string             `json:"description"`
-	AuthorID    string             `json:"author_id"`
-	AuthorName  string             `json:"author_name"`
-	CreatedAt   *time.Time         `json:"created_at"`
-	UpdatedAt   *time.Time         `json:"updated_at"`
+	ID          primitive.ObjectID `bson:"id"`
+	Title       string             `bson:"title"`
+	ISBN        string             `bson:"isbn"`
+	Category    string             `bson:"category"`
+	Description string             `bson:"description"`
+	AuthorID    string             `bson:"author_id"`
+	AuthorName  string             `bson:"author_name"`
+	Quantity    int                `bson:"quantity"`
+	CreatedAt   *time.Time         `bson:"created_at"`
+	UpdatedAt   *time.Time         `bson:"updated_at"`
 }
 
 func (bBk *bsonBook) valid() (bool, error) {
@@ -29,10 +31,12 @@ func (bBk *bsonBook) valid() (bool, error) {
 func toBson(bk *book.Book) (*bsonBook, error) {
 	bBk := bsonBook{
 		Title:       bk.Title,
+		ISBN:        bk.ISBN,
 		Category:    bk.Category,
 		Description: bk.Description,
 		AuthorID:    bk.AuthorID,
 		AuthorName:  bk.AuthorName,
+		Quantity:    bk.Quantity,
 		CreatedAt:   bk.CreatedAt,
 		UpdatedAt:   bk.UpdatedAt,
 	}
@@ -40,7 +44,7 @@ func toBson(bk *book.Book) (*bsonBook, error) {
 	if bk.ID != "" {
 		id, err := primitive.ObjectIDFromHex(bk.ID)
 		if err != nil {
-			return nil, errors.New("invalid")
+			return nil, errors.New("invalid id")
 		}
 		bBk.ID = id
 	}
@@ -51,10 +55,12 @@ func toModel(bk *bsonBook) *book.Book {
 	return &book.Book{
 		ID:          bk.ID.Hex(),
 		Title:       bk.Title,
+		ISBN:        bk.ISBN,
 		Category:    bk.Category,
 		Description: bk.Description,
 		AuthorID:    bk.AuthorID,
 		AuthorName:  bk.AuthorName,
+		Quantity:    bk.Quantity,
 		CreatedAt:   bk.CreatedAt,
 		UpdatedAt:   bk.UpdatedAt,
 	}

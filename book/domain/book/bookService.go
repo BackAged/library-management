@@ -2,7 +2,6 @@ package book
 
 import (
 	"context"
-	"fmt"
 )
 
 type service struct {
@@ -15,7 +14,6 @@ func NewService(r Repository) Service {
 }
 
 func (s *service) Create(ctx context.Context, bk *Book) error {
-	fmt.Print(bk)
 	if err := s.repository.Add(ctx, bk); err != nil {
 		return err
 	}

@@ -23,17 +23,20 @@ func Serve(cfgPath string) error {
 		return err
 	}
 
+	fmt.Println(cfg)
+
 	rds, err := database.NewClient(cfg.Mongo.URI, cfg.Mongo.Database)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
 
-	tskRepo := repository.NewBookRepository(rds, "books")
-	tskSvc := book.NewService(tskRepo)
-	tskHndlr := NewBookHandler(tskSvc)
+	bkRepo := repository.NewBookRepository(rds, "books")
+	bkSvc := book.NewService(bkRepo)
+	bkHndlr := NewBookHandler(bkSvc)
 
 	r := chi.NewRouter()
-	r.Mount("/api/v1/book", BookRouter(tskHndlr))
+	r.Mount("/api/v1/book", NewBookRouter(bkHndlr))
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	srv := &http.Server{

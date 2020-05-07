@@ -1,16 +1,16 @@
 package rest
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"github.com/BackAged/library-management/book/domain/book"
 	"github.com/go-chi/chi"
+	"github.com/thedevsaddam/govalidator"
 )
 
-// BookRouter contains all routes for albums service.
-func BookRouter(h BookHandler) http.Handler {
+// NewBookRouter contains all routes for books service.
+func NewBookRouter(h BookHandler) http.Handler {
 	router := chi.NewRouter()
 	router.Post("/create", h.Create)
 
@@ -27,40 +27,97 @@ type bkHandler struct {
 }
 
 // NewBookHandler will instantiate the handler
-func NewBookHandler(tskSvc book.Service) BookHandler {
-	return &bkHandler{bkSvc: tskSvc}
+func NewBookHandler(bkSvc book.Service) BookHandler {
+	return &bkHandler{bkSvc: bkSvc}
 }
 
-type createDTO struct {
+type createRequest struct {
 	Title       string `json:"title"`
+	ISBN        string `json:"isbn"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
 	AuthorID    string `json:"author_id"`
+	AuthorName  string `json:"author_name"`
+	Quantity    int    `json:"quantity"`
+}
+
+type createReponse struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	ISBN        string `json:"isbn"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+	AuthorID    string `json:"author_id"`
+	AuthorName  string `json:"author_name"`
+	Quantity    int    `json:"quantity"`
+}
+
+func createRequestValidator(r *http.Request) (*createRequest, error) {
+	var crtRq createRequest
+	rules := govalidator.MapData{
+		"title":       []string{"required", "alpha_space"},
+		"isbn":        []string{"required", "alpha_space"},
+		"category":    []string{"required", "alpha_space"},
+		"description": []string{"required", "alpha_space"},
+		"author_id":   []string{"required", "alpha_space"},
+		"author_name": []string{"required", "alpha_space"},
+		"quantity":    []string{"required", "numeric"},
+	}
+
+	opts := govalidator.Options{
+		Request: r,
+		Data:    &crtRq,
+		Rules:   rules,
+	}
+
+	v := govalidator.New(opts)
+	err := v.ValidateJSON()
+	if len(err) == 0 {
+		return &crtRq, nil
+	}
+
+	ve := &ValidationError{}
+	for k, v := range err {
+		ve.Add(k, v)
+	}
+
+	return nil, ve
 }
 
 // Create handler
 func (h *bkHandler) Create(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	fmt.Println("shit")
-	tskDTO := &createDTO{}
-	if err := json.NewDecoder(r.Body).Decode(&tskDTO); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	crtRq, err := createRequestValidator(r)
+	fmt.Println(crtRq, err)
+	if err != nil {
+		ServeJSON(http.StatusBadRequest, "", nil, err, w)
+		return
 	}
 
-	tsk := &book.Book{
-		Title:       tskDTO.Title,
-		Category:    tskDTO.Category,
-		Description: tskDTO.Description,
-		AuthorID:    tskDTO.AuthorID,
+	bk := &book.Book{
+		Title:       crtRq.Title,
+		ISBN:        crtRq.ISBN,
+		Category:    crtRq.Category,
+		Description: crtRq.Description,
+		AuthorID:    crtRq.AuthorID,
+		AuthorName:  crtRq.AuthorName,
+		Quantity:    crtRq.Quantity,
 	}
 
-	fmt.Println(tsk)
-
-	if err := h.bkSvc.Create(r.Context(), tsk); err != nil {
-		fmt.Println(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := h.bkSvc.Create(r.Context(), bk); err != nil {
+		//  TODO:-> Domain level error handling
+		ServeJSON(http.StatusInternalServerError, "error", nil, nil, w)
+		return
 	}
 
-	fmt.Println(tsk)
-	json.NewEncoder(w).Encode(tsk.ID)
+	resBk := &book.Book{
+		ID:          bk.ID,
+		Title:       bk.Title,
+		ISBN:        bk.ISBN,
+		Category:    bk.Category,
+		Description: bk.Description,
+		AuthorID:    bk.AuthorID,
+		AuthorName:  bk.AuthorName,
+		Quantity:    bk.Quantity,
+	}
+	ServeJSON(http.StatusCreated, "", resBk, nil, w)
 }

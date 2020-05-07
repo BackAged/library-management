@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
 
 // Client mongo db client
@@ -19,12 +20,14 @@ type Client struct {
 
 // NewClient returns a new mongo db client
 func NewClient(uri, db string) (*Client, error) {
-	opts := options.Client().ApplyURI(uri).SetConnectTimeout(10 * time.Second)
-	c, err := mongo.Connect(context.Background(), opts)
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(uri))
+	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
 		return nil, err
 	}
-	return &Client{client: c, db: db}, nil
+
+	return &Client{client: client, db: db}, nil
 }
 
 // Row is mongo row
