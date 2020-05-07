@@ -5,7 +5,7 @@ import { User } from "../../entity/user";
 import { DBInterface } from "../database/db";
 import { ObjectID } from "mongodb";
 
-export default class UserRepository implements RegisterUserContext, GetUser, DeleteUser {
+export class UserRepository implements RegisterUserContext, GetUser, DeleteUser {
     private db: DBInterface;
     private collection: string;
     

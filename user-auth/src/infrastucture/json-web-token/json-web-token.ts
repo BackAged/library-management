@@ -5,7 +5,7 @@ import jsonwebtoken from "jsonwebtoken";
 const jwtKey = "blahblah";
 const jwtExpirySeconds = 3000;
 
-class JsonWebTokenManager implements GenerateJSONWebToken {
+export class JsonWebTokenManager implements GenerateJSONWebToken {
     generateJSONWebTOken(payload: any): string {
         return jsonwebtoken.sign(payload, jwtKey, {
             algorithm: "HS256",
