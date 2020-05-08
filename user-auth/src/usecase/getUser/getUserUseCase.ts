@@ -1,37 +1,39 @@
 import { User } from "../../entity/user";
-import { GetUser } from "./getUser";
+import { GetUser } from "./port";
+import { UserNotFound } from "./errors";
 
-// kinda like DTO
-export interface CreateUserUseCaseResponse {
+export interface GetUserUseCaseResponse {
     name: string,
     age: number,
     gender: string,
-    adult: boolean,
+    email: string,
+    phone?: string,
 }
 
 export class GetUserUseCase {
-    private getUserRepo: GetUser
+    private userRepo: GetUser
 
     constructor(getUserRepo: GetUser) {
-        this.getUserRepo = getUserRepo;
+        this.userRepo = getUserRepo;
     }
 
-    private toCreateUserUseCaseResponse(user: User): CreateUserUseCaseResponse {
+    private toGetUserUseCaseResponse(user: User): GetUserUseCaseResponse {
         return {
             name: user.name,
             age: user.age,
             gender: String(user.gender),
-            adult: user.age >= 18 ? true : false
+            email: user.email,
+            phone: user.phone,
         }
     }
 
-    public async getUser(userID: string) {
-        const user = await this.getUserRepo.getUser(userID);
+    public async execute(userID: string) {
+        const user = await this.userRepo.getUser(userID);
         if (!user) {
-            return null;
+            throw new UserNotFound("No user exist with this id");
         }
 
-        return this.toCreateUserUseCaseResponse(user);
+        return this.toGetUserUseCaseResponse(user);
     }
 }
 
