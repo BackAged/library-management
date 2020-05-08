@@ -4,7 +4,8 @@ import "context"
 
 // Repository defines the port of book for infrastracture adapter
 type Repository interface {
-	Add(context.Context, *Book) error
-	// Get(context.Context, string) (*Book, error)
-	// FindByAutherID(context.Context, string) ([]*Book, error)
+	AddBook(context.Context, *Book) error
+	GetBook(context.Context, string) (*Book, error)
+	ListBook(context.Context, *int64, *int64) ([]Book, error)
+	ListBookByAutherID(context.Context, string, *int64, *int64) ([]Book, error)
 }

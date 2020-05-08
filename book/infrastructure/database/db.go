@@ -30,9 +30,12 @@ func (c *Client) FindByID(ctx context.Context, col, id string) (*Row, error) {
 }
 
 // Find multiple things
-func (c *Client) Find(ctx context.Context, col string, q bson.M) (*Rows, error) {
-	opt := options.Find()
-	cur, err := c.client.Database(c.db).Collection(col).Find(ctx, q, opt)
+func (c *Client) Find(ctx context.Context, col string, q bson.M, skip *int64, limit *int64) (*Rows, error) {
+	opt := options.FindOptions{
+		Skip:  skip,
+		Limit: limit,
+	}
+	cur, err := c.client.Database(c.db).Collection(col).Find(ctx, q, &opt)
 	if err != nil {
 		return nil, err
 	}

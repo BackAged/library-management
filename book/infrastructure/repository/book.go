@@ -7,12 +7,14 @@ import (
 
 	"github.com/BackAged/library-management/book/domain/book"
 	"github.com/BackAged/library-management/book/infrastructure/database"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // BsonBook defines bson book
 type bsonBook struct {
-	ID          primitive.ObjectID `bson:"id"`
+	ID          primitive.ObjectID `bson:"_id"`
 	Title       string             `bson:"title"`
 	ISBN        string             `bson:"isbn"`
 	Category    string             `bson:"category"`
@@ -28,7 +30,7 @@ func (bBk *bsonBook) valid() (bool, error) {
 	return true, nil
 }
 
-func toBson(bk *book.Book) (*bsonBook, error) {
+func toBosonBook(bk *book.Book) (*bsonBook, error) {
 	bBk := bsonBook{
 		Title:       bk.Title,
 		ISBN:        bk.ISBN,
@@ -51,7 +53,7 @@ func toBson(bk *book.Book) (*bsonBook, error) {
 	return &bBk, nil
 }
 
-func toModel(bk *bsonBook) *book.Book {
+func toModelBook(bk *bsonBook) *book.Book {
 	return &book.Book{
 		ID:          bk.ID.Hex(),
 		Title:       bk.Title,
@@ -80,8 +82,8 @@ func NewBookRepository(client *database.Client, col string) book.Repository {
 }
 
 // Add adds into repository
-func (br *bookRepository) Add(ctx context.Context, bk *book.Book) error {
-	bBk, err := toBson(bk)
+func (br *bookRepository) AddBook(ctx context.Context, bk *book.Book) error {
+	bBk, err := toBosonBook(bk)
 	if err != nil {
 		return err
 	}
@@ -102,7 +104,88 @@ func (br *bookRepository) Add(ctx context.Context, bk *book.Book) error {
 		return err
 	}
 
-	*bk = *toModel(bBk)
+	*bk = *toModelBook(bBk)
 
 	return nil
+}
+
+// Get fetches from repository
+func (br *bookRepository) GetBook(ctx context.Context, ID string) (*book.Book, error) {
+	if _, err := primitive.ObjectIDFromHex(ID); err != nil {
+		return nil, nil
+	}
+
+	row, err := br.db.FindByID(context.Background(), br.col, ID)
+	if err != nil {
+		return nil, err
+	}
+	defer row.Close()
+
+	bBk := bsonBook{}
+
+	if row.Next() {
+		if err := row.Scan(&bBk); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := row.Err(); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return toModelBook(&bBk), nil
+}
+
+// Get fetches from repository
+func (br *bookRepository) ListBook(ctx context.Context, skip *int64, limit *int64) ([]book.Book, error) {
+	rows, err := br.db.Find(context.Background(), br.col, bson.M{}, skip, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	bks := []book.Book{}
+	for rows.Next() {
+		bBk := bsonBook{}
+		if err := rows.Scan(&bBk); err != nil {
+			return nil, err
+		}
+		bks = append(bks, *toModelBook(&bBk))
+
+	}
+	if rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return bks, nil
+}
+
+func (br *bookRepository) ListBookByAutherID(ctx context.Context, authorID string, skip *int64, limit *int64) ([]book.Book, error) {
+	query := bson.M{
+		"author_id": authorID,
+	}
+
+	rows, err := br.db.Find(context.Background(), br.col, query, skip, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	bks := []book.Book{}
+	for rows.Next() {
+		bBk := bsonBook{}
+		if err := rows.Scan(&bBk); err != nil {
+			return nil, err
+		}
+		bks = append(bks, *toModelBook(&bBk))
+
+	}
+	if rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return bks, nil
 }
