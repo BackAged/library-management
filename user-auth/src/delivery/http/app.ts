@@ -11,6 +11,10 @@ import { newLoginUserController } from "./controller/loginUserController";
 import { newRegisterUserController } from "./controller/registerUserController";
 
 import config from "../../configuration";
+import { newGetUserController } from "./controller/getUserController";
+import { newGetUserUseCase } from "../../usecase/getUser/getUserUseCase";
+import { newListUserUseCase } from "../../usecase/listUser/listUserUseCase";
+import { newListUserController } from "./controller/listUserController";
 
 
 const app = express();
@@ -33,17 +37,26 @@ app.use(bodyParser.urlencoded({ extended: true }));
     const jsonWebTokenManager = await newJsonWebTokenManager();
     const registerUserUseCase = await newRegisterUserUseCase(userRepository, jsonWebTokenManager);
     const loginUserUseCase = await newLoginUserUseCase(userRepository, jsonWebTokenManager);
+    const getUserUseCase = await newGetUserUseCase(userRepository);
+    const listUserUseCase = await newListUserUseCase(userRepository);
 
     // initializing controllers
     const registerUserController = await newRegisterUserController(registerUserUseCase);
     const loginUserController = await newLoginUserController(loginUserUseCase);
 
+    const getUserController = await newGetUserController(getUserUseCase);
+    const listUserController = await newListUserController(listUserUseCase);
+
     //initialize routers
     const authRouter = Router();
     authRouter.post("/register", registerUserController.registerUser);
-    authRouter.post("/login", loginUserController.LoginUser);
-
+    authRouter.post("/login", loginUserController.loginUser);
     app.use("/api/v1/auth", authRouter);
+
+    const userRouter = Router();
+    userRouter.get("/:user_id", getUserController.getUser);
+    userRouter.get("/", listUserController.listUser);
+    app.use("/api/v1/user", userRouter);
 
 })();
 
