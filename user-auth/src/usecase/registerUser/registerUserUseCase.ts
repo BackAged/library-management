@@ -47,7 +47,6 @@ export class RegisterUserUseCase {
     public async execute(userData: RegisterUserUseCaseRequest) {
         const existingUser = await this.userRepo.getUserByEmail(userData.email);
         if (existingUser) {
-            console.log(existingUser);
             throw new EmailAlreadyExist("This email already exists");
         }
 

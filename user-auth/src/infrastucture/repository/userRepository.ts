@@ -1,11 +1,12 @@
 import { CreateUser, RegisterUserContext } from "../../usecase/registerUser/port";
-import { GetUser } from "../../usecase/getUser/getUser";
+import { GetUser } from "../../usecase/getUser/port";
 import { DeleteUser } from "../../usecase/deleteUser/deleteUser";
 import { User } from "../../entity/user";
 import { DBInterface } from "../database/db";
 import { ObjectID } from "mongodb";
+import { ListUser } from "../../usecase/listUser/port";
 
-export class UserRepository implements RegisterUserContext, GetUser, DeleteUser {
+export class UserRepository implements RegisterUserContext, GetUser, DeleteUser, ListUser {
     private db: DBInterface;
     private collection: string;
     
@@ -13,6 +14,7 @@ export class UserRepository implements RegisterUserContext, GetUser, DeleteUser 
         this.db = db;
         this.collection = collectionName;
     }
+   
 
     private toPersistence(user: User) {
         //TODO:-> datastorage format data validation could be done here
@@ -38,16 +40,30 @@ export class UserRepository implements RegisterUserContext, GetUser, DeleteUser 
 
     public async getUser(userID: string): Promise<User | null> {
         const dbUser = await this.db.findOne(this.collection, {_id: new ObjectID(userID)});
-        return this.toModel(dbUser);
+        if (dbUser) {
+            return this.toModel({...dbUser, ID: dbUser._id});
+        }
+        
+        return null;
     }
 
     public async getUserByEmail(email: string): Promise<User | null> {
         const dbUser =  await this.db.findOne(this.collection, {email});
-        return this.toModel(dbUser);
+        if (dbUser) {
+            return this.toModel({...dbUser, ID: dbUser._id});
+        }
+
+        return null;
     }
 
     public async deleteUser(userID: string): Promise<void> {
         return await this.db.deleteOne(this.collection, {_id: new ObjectID(userID)});
+    }
+
+    public async listUser(skip: number, limit: number): Promise<User[]> {
+        const dbUsers =  await this.db.find(this.collection,{}, {skip, limit});
+
+        return dbUsers.map((user:any) => this.toModel({...user, ID: user._id}));
     }
     
 }

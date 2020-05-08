@@ -11,14 +11,14 @@ export class LoginUserController {
 
     constructor(loginUserUseCase: LoginUserUseCase) {
         this.loginUserUseCase = loginUserUseCase;
-        this.LoginUser = this.LoginUser.bind(this);
+        this.loginUser = this.loginUser.bind(this);
     }
 
     private seralize(response: LoginUserUseCaseResponse) {
         return response;
     }
 
-    public async LoginUser(req: Request, res: Response) {
+    public async loginUser(req: Request, res: Response) {
         const schema = object().keys({
             email: string().required(),
             password: string().required(),

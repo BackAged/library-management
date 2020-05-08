@@ -11,6 +11,7 @@ export interface LoginUserUseCaseRequest {
 
 export interface LoginUserUseCaseResponse {
     user: {
+        id: string,
         name: string,
         age: number,
         gender: string,
@@ -32,6 +33,7 @@ export class LoginUserUseCase {
     private toCreateUserUseCaseResponse(user: User, token: string): LoginUserUseCaseResponse {
         return {
             user: {
+                id: user.ID as string,
                 name: user.name,
                 age: user.age,
                 gender: String(user.gender),
