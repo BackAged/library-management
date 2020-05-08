@@ -2,7 +2,7 @@ host: ""
 port: 8000
 mongo:
   uri: "mongodb://localhost:27017"
-  database: "task"
+  database: "book"
 redis:
   host: "redis:6379"
   password: ""

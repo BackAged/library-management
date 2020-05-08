@@ -10,10 +10,12 @@ import (
 	"time"
 
 	"github.com/BackAged/library-management/book/configuration"
+	"github.com/BackAged/library-management/book/domain/author"
 	"github.com/BackAged/library-management/book/domain/book"
 	"github.com/BackAged/library-management/book/infrastructure/database"
 	"github.com/BackAged/library-management/book/infrastructure/repository"
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
 
 // Serve serves rest api
@@ -32,11 +34,20 @@ func Serve(cfgPath string) error {
 	}
 
 	bkRepo := repository.NewBookRepository(rds, "books")
-	bkSvc := book.NewService(bkRepo)
+	athrRepo := repository.NewAuthorRepository(rds, "authors")
+
+	bkSvc := book.NewService(bkRepo, athrRepo)
+	authrSvc := author.NewService(athrRepo)
+
 	bkHndlr := NewBookHandler(bkSvc)
+	authrHndlr := NewAuthorHandler(authrSvc)
 
 	r := chi.NewRouter()
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
 	r.Mount("/api/v1/book", NewBookRouter(bkHndlr))
+	r.Mount("/api/v1/author", NewAuthorRouter(authrHndlr))
 
 	addr := fmt.Sprintf("%s:%d", cfg.Host, cfg.Port)
 	srv := &http.Server{

@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/BackAged/library-management/book/domain/book"
@@ -12,14 +11,20 @@ import (
 // NewBookRouter contains all routes for books service.
 func NewBookRouter(h BookHandler) http.Handler {
 	router := chi.NewRouter()
-	router.Post("/create", h.Create)
+	router.Post("/create", h.CreateBook)
+	router.Get("/", h.ListBook)
+	router.Get("/{bookID}", h.GetBook)
+	router.Get("/author/{authorID}", h.ListBookByAuthor)
 
 	return router
 }
 
 // BookHandler interface for the Book handlers.
 type BookHandler interface {
-	Create(http.ResponseWriter, *http.Request)
+	CreateBook(http.ResponseWriter, *http.Request)
+	GetBook(http.ResponseWriter, *http.Request)
+	ListBook(http.ResponseWriter, *http.Request)
+	ListBookByAuthor(http.ResponseWriter, *http.Request)
 }
 
 type bkHandler struct {
@@ -31,36 +36,33 @@ func NewBookHandler(bkSvc book.Service) BookHandler {
 	return &bkHandler{bkSvc: bkSvc}
 }
 
-type createRequest struct {
+type createBookRequest struct {
 	Title       string `json:"title"`
 	ISBN        string `json:"isbn"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
 	AuthorID    string `json:"author_id"`
-	AuthorName  string `json:"author_name"`
 	Quantity    int    `json:"quantity"`
 }
 
-type createReponse struct {
+type createBookReponse struct {
 	ID          string `json:"id"`
 	Title       string `json:"title"`
 	ISBN        string `json:"isbn"`
 	Category    string `json:"category"`
 	Description string `json:"description"`
 	AuthorID    string `json:"author_id"`
-	AuthorName  string `json:"author_name"`
 	Quantity    int    `json:"quantity"`
 }
 
-func createRequestValidator(r *http.Request) (*createRequest, error) {
-	var crtRq createRequest
+func createBookRequestValidator(r *http.Request) (*createBookRequest, error) {
+	var crtRq createBookRequest
 	rules := govalidator.MapData{
 		"title":       []string{"required", "alpha_space"},
 		"isbn":        []string{"required", "alpha_space"},
 		"category":    []string{"required", "alpha_space"},
 		"description": []string{"required", "alpha_space"},
 		"author_id":   []string{"required", "alpha_space"},
-		"author_name": []string{"required", "alpha_space"},
 		"quantity":    []string{"required", "numeric"},
 	}
 
@@ -85,9 +87,8 @@ func createRequestValidator(r *http.Request) (*createRequest, error) {
 }
 
 // Create handler
-func (h *bkHandler) Create(w http.ResponseWriter, r *http.Request) {
-	crtRq, err := createRequestValidator(r)
-	fmt.Println(crtRq, err)
+func (h *bkHandler) CreateBook(w http.ResponseWriter, r *http.Request) {
+	crtRq, err := createBookRequestValidator(r)
 	if err != nil {
 		ServeJSON(http.StatusBadRequest, "", nil, err, w)
 		return
@@ -99,13 +100,16 @@ func (h *bkHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Category:    crtRq.Category,
 		Description: crtRq.Description,
 		AuthorID:    crtRq.AuthorID,
-		AuthorName:  crtRq.AuthorName,
 		Quantity:    crtRq.Quantity,
 	}
 
 	if err := h.bkSvc.Create(r.Context(), bk); err != nil {
-		//  TODO:-> Domain level error handling
-		ServeJSON(http.StatusInternalServerError, "error", nil, nil, w)
+		switch v := err.(type) {
+		case *book.AuthorNotFound:
+			ServeJSON(http.StatusInternalServerError, v.GetMessage(), nil, v.GetErrors(), w)
+		default:
+			ServeJSON(http.StatusInternalServerError, "Something went wrong", nil, nil, w)
+		}
 		return
 	}
 
@@ -120,4 +124,136 @@ func (h *bkHandler) Create(w http.ResponseWriter, r *http.Request) {
 		Quantity:    bk.Quantity,
 	}
 	ServeJSON(http.StatusCreated, "", resBk, nil, w)
+}
+
+type getBookReponse struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	ISBN        string `json:"isbn"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+	AuthorID    string `json:"author_id"`
+	AuthorName  string `json:"author_name"`
+	Quantity    int    `json:"quantity"`
+}
+
+// Get handler
+func (h *bkHandler) GetBook(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "bookID")
+
+	bk, err := h.bkSvc.Get(r.Context(), id)
+	if err != nil {
+		switch v := err.(type) {
+		case *book.NotFound:
+			ServeJSON(http.StatusInternalServerError, v.GetMessage(), nil, v.GetErrors(), w)
+		default:
+			ServeJSON(http.StatusInternalServerError, "Something went wrong", nil, nil, w)
+		}
+		return
+	}
+
+	resBk := &getBookReponse{
+		ID:          bk.ID,
+		Title:       bk.Title,
+		ISBN:        bk.ISBN,
+		Category:    bk.Category,
+		Description: bk.Description,
+		AuthorID:    bk.AuthorID,
+		AuthorName:  bk.AuthorName,
+		Quantity:    bk.Quantity,
+	}
+	ServeJSON(http.StatusCreated, "", resBk, nil, w)
+}
+
+type listBookReponse struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	ISBN        string `json:"isbn"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+	AuthorID    string `json:"author_id"`
+	AuthorName  string `json:"author_name"`
+	Quantity    int    `json:"quantity"`
+}
+
+// List handler
+func (h *bkHandler) ListBook(w http.ResponseWriter, r *http.Request) {
+	v, err := ParseSkipLimit(r)
+	if err != nil {
+		ServeJSON(http.StatusBadRequest, "", nil, err, w)
+		return
+	}
+
+	skip, limit := v["skip"], v["limit"]
+
+	bk, err := h.bkSvc.List(r.Context(), &skip, &limit)
+	if err != nil {
+		//  TODO:-> Domain level error handling
+		ServeJSON(http.StatusInternalServerError, "error", nil, nil, w)
+		return
+	}
+
+	resBks := []listBookReponse{}
+	for _, b := range bk {
+		resBk := listBookReponse{
+			ID:          b.ID,
+			Title:       b.Title,
+			ISBN:        b.ISBN,
+			Category:    b.Category,
+			Description: b.Description,
+			AuthorID:    b.AuthorID,
+			AuthorName:  b.AuthorName,
+			Quantity:    b.Quantity,
+		}
+		resBks = append(resBks, resBk)
+	}
+
+	ServeJSON(http.StatusCreated, "", resBks, nil, w)
+}
+
+type listBookByAuthorReponse struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	ISBN        string `json:"isbn"`
+	Category    string `json:"category"`
+	Description string `json:"description"`
+	AuthorID    string `json:"author_id"`
+	AuthorName  string `json:"author_name"`
+	Quantity    int    `json:"quantity"`
+}
+
+// List handler
+func (h *bkHandler) ListBookByAuthor(w http.ResponseWriter, r *http.Request) {
+	v, err := ParseSkipLimit(r)
+	if err != nil {
+		ServeJSON(http.StatusBadRequest, "", nil, err, w)
+		return
+	}
+
+	skip, limit := v["skip"], v["limit"]
+	authorID := chi.URLParam(r, "authorID")
+
+	bk, err := h.bkSvc.GetAuthorBooks(r.Context(), authorID, &skip, &limit)
+	if err != nil {
+		//  TODO:-> Domain level error handling
+		ServeJSON(http.StatusInternalServerError, "error", nil, nil, w)
+		return
+	}
+
+	resBks := []listBookByAuthorReponse{}
+	for _, b := range bk {
+		resBk := listBookByAuthorReponse{
+			ID:          b.ID,
+			Title:       b.Title,
+			ISBN:        b.ISBN,
+			Category:    b.Category,
+			Description: b.Description,
+			AuthorID:    b.AuthorID,
+			AuthorName:  b.AuthorName,
+			Quantity:    b.Quantity,
+		}
+		resBks = append(resBks, resBk)
+	}
+
+	ServeJSON(http.StatusCreated, "", resBks, nil, w)
 }
