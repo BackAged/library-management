@@ -1,0 +1,10 @@
+host: ""
+port: 3002
+mongo:
+  uri: "mongodb://localhost:27017"
+  database: "book"
+redis:
+  host: "redis:6379"
+  password: ""
+  db: 0
+graceful_timeout: 15
