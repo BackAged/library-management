@@ -9,7 +9,7 @@ export const getUserFromToken = async (token: string) => {
             }
         });
 
-        return response.data;
+        return response.data.data;
     } catch (e) {
         // TODO:-> Custom application side error wrapper
         throw e;
