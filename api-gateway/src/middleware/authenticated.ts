@@ -14,8 +14,8 @@ export const Authenticated = async(req: Request, res: Response, next:  NextFunct
 
     try {
         const user = await getUserFromToken(authHeader as string);
-        console.log(user)
         req.headers["X-USERID"] = user.id;
+        req.headers["X-ROLE"] = user.role;
     } catch(e) {
         console.log(e);
         return res.status(401).send({

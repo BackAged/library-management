@@ -5,8 +5,10 @@ import { User } from "../../entity/user";
 import { DBInterface } from "../database/db";
 import { ObjectID } from "mongodb";
 import { ListUser } from "../../usecase/listUser/port";
+import { UpdateUser } from "../../usecase/updateUser/port";
 
-export class UserRepository implements RegisterUserContext, GetUser, DeleteUser, ListUser {
+export class UserRepository implements RegisterUserContext,
+ GetUser, DeleteUser, ListUser, UpdateUser {
     private db: DBInterface;
     private collection: string;
     
@@ -26,6 +28,7 @@ export class UserRepository implements RegisterUserContext, GetUser, DeleteUser,
             phone: user.phone,
             password: user.password,
             role: user.role,
+            profile_pic: user.profilePic,
         }
     }
 
@@ -67,6 +70,19 @@ export class UserRepository implements RegisterUserContext, GetUser, DeleteUser,
         return dbUsers.map((user:any) => this.toModel({...user, ID: user._id}));
     }
     
+
+    public async updateUser(userID: string, user: User): Promise<void> {
+        return await this.db.updateOne(this.collection,{_id: new ObjectID(userID)}, {
+            name: user.name,
+            age: user.age,
+            gender: String(user.gender),
+            email: user.email,
+            phone: user.phone,
+            password: user.password,
+            role: user.role,
+            profile_pic: user.profilePic,
+        })
+    }
 }
 
 export const newUserRepository = (db: DBInterface, collectionName: string) => {

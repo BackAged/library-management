@@ -7,7 +7,6 @@ import { USER_AUTH_URLS } from "./service-proxy/user-auth"
 import { BOOK_URLS } from "./service-proxy/book";
 import { LIBRARY_URLS } from "./service-proxy/library";
 import { Authenticated } from "./middleware/authenticated";
-import { AdminOnly } from "./middleware/adminOnly";
 
 const app = Express();
 
@@ -27,7 +26,7 @@ app.post("/api/v1/auth/register", (req, res) => {
     proxy.web(req, res, { target: USER_AUTH_URLS.register, prependPath: false});
 });
 
-app.get("/api/v1/user", AdminOnly, async (req, res) : Promise<any> => {
+app.get("/api/v1/user", Authenticated, async (req, res) : Promise<any> => {
     proxy.web(req, res, { target: USER_AUTH_URLS.listUser, prependPath: false});
 });
 
@@ -35,9 +34,13 @@ app.get("/api/v1/user/:userID", (req, res) => {
     proxy.web(req, res, { target: USER_AUTH_URLS.getUser(req.params.userID), prependPath: false});
 });
 
+app.post("/api/v1/user/upload-profile-pic", Authenticated, (req, res) => {
+    proxy.web(req, res, { target: USER_AUTH_URLS.uploadPorfilePic, prependPath: false});
+});
+
 
 //////////////////////////// BOOK SERVICE PROXY ////////////////////////////
-app.post("/api/v1/book/create", AdminOnly, async (req, res) : Promise<any> => {
+app.post("/api/v1/book/create", Authenticated, async (req, res) : Promise<any> => {
     console.log(BOOK_URLS.createBook);
     proxy.web(req, res, { target: BOOK_URLS.createBook, prependPath: false});
 }, bodyParser.json());
@@ -54,7 +57,7 @@ app.get("/api/v1/book/author/:authorID", (req, res) => {
     proxy.web(req, res, { target: BOOK_URLS.listBookByAuthor(req.params.authorID), prependPath: false});
 });
 
-app.post("/api/v1/author/create", AdminOnly, async (req, res) : Promise<any> => {
+app.post("/api/v1/author/create", Authenticated, async (req, res) : Promise<any> => {
     proxy.web(req, res, { target: BOOK_URLS.createAuthor, prependPath: false});
 });
 
@@ -80,11 +83,11 @@ app.get("/api/v1/book-loan/:bookID", (req, res) => {
     proxy.web(req, res, { target: LIBRARY_URLS.bookLoanDetails(req.params.bookID), prependPath: false});
 });
 
-app.get("/api/v1/book-loan/:bookID/accept", AdminOnly, (req, res) => {
+app.get("/api/v1/book-loan/:bookID/accept", Authenticated, (req, res) => {
     proxy.web(req, res, { target: LIBRARY_URLS.bookLoanAccept(req.params.authorID), prependPath: false});
 });
 
-app.post("/api/v1/book-loan/:bookID/reject", AdminOnly, async (req, res) : Promise<any> => {
+app.post("/api/v1/book-loan/:bookID/reject", Authenticated, async (req, res) : Promise<any> => {
     proxy.web(req, res, { target: LIBRARY_URLS.bookLoanAccept(req.params.authorID), prependPath: false});
 });
 

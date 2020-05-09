@@ -7,23 +7,30 @@ import { newJsonWebTokenManager } from "../../infrastucture/json-web-token/json-
 import { newUserRepository } from "../../infrastucture/repository/userRepository";
 import { newRegisterUserUseCase } from "../../usecase/registerUser/registerUserUseCase";
 import { newLoginUserUseCase } from "../../usecase/loginUser/loginUserUseCase";
+import { newUpdateUserUseCase } from "../../usecase/updateUser/updateUserUseCase";
 import { newLoginUserController } from "./controller/loginUserController";
 import { newRegisterUserController } from "./controller/registerUserController";
+import { newUploadProfilePicController } from "./controller/uploadProfileController";
 
 import config from "../../configuration";
+
 import { newGetUserController } from "./controller/getUserController";
 import { newGetUserUseCase } from "../../usecase/getUser/getUserUseCase";
 import { newListUserUseCase } from "../../usecase/listUser/listUserUseCase";
 import { newListUserController } from "./controller/listUserController";
 import { newVerifyTokenController } from "./controller/verifyTokenController";
-import { adminOnly } from "./middleware/adminOnly";
 
+import { adminOnly, authenticated } from "./middleware/adminOnly";
+import { upload } from "./middleware/uploadFile";
 
 const app = express();
+
+app.use(express.static('storage'));
 
 // registering app level middleware
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(morgan('combined'));
 
 // bootstrapping the application
 (async () => {
@@ -41,6 +48,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
     const loginUserUseCase = await newLoginUserUseCase(userRepository, jsonWebTokenManager);
     const getUserUseCase = await newGetUserUseCase(userRepository);
     const listUserUseCase = await newListUserUseCase(userRepository);
+    const updateUserUseCase = await newUpdateUserUseCase(userRepository);
 
     // initializing controllers
     const registerUserController = await newRegisterUserController(registerUserUseCase);
@@ -49,6 +57,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
     const getUserController = await newGetUserController(getUserUseCase);
     const listUserController = await newListUserController(listUserUseCase);
+    const updateUserProfilePicController = await newUploadProfilePicController(updateUserUseCase);
 
     //initialize routers
     const authRouter = Router();
@@ -60,6 +69,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
     const userRouter = Router();
     userRouter.get("/:user_id", getUserController.getUser);
     userRouter.get("/",adminOnly, listUserController.listUser);
+    userRouter.post("/upload-profile-pic", authenticated, upload.single("profile_pic"),
+        updateUserProfilePicController.uploadProfilePic
+    );
     app.use("/api/v1/user", userRouter);
 
 })();

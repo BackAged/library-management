@@ -20,6 +20,7 @@ interface UserProps {
     phone?: string;
     password: string;
     role?: Role;
+    profilePic?: string;
 }
 
 
@@ -32,6 +33,7 @@ export class User {
     private _phone?: string;
     private _password: string;
     private _role: Role;
+    private _profilePic?: string;
 
     private constructor(userData: UserProps) {
         this._name = userData.name;
@@ -42,6 +44,7 @@ export class User {
         this._password = userData.password;
         this._ID = userData.ID;
         this._role = userData.role ? userData.role : Role.Member;
+        this._profilePic = userData.profilePic;
     }
 
     private static isValid(userData: UserProps): string[] {
@@ -124,6 +127,14 @@ export class User {
 
     get role(): Role | string {
         return this._role;
+    }
+
+    get profilePic(): string | undefined {
+        return this._profilePic;
+    }
+
+    set profilePic(profilePic: string | undefined) {
+        this._profilePic = profilePic;
     }
 
     private static hasPassword(plainPassword: string): string{
