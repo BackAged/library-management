@@ -60,14 +60,14 @@ type authorRepository struct {
 
 // NewAuthorRepository returns a new AuthorRepository
 func NewAuthorRepository(client *database.Client, col string) author.Repository {
-	return &bookRepository{
+	return &authorRepository{
 		db:  client,
 		col: col,
 	}
 }
 
 // Add adds into repository
-func (br *bookRepository) AddAuthor(ctx context.Context, bk *author.Author) error {
+func (br *authorRepository) AddAuthor(ctx context.Context, bk *author.Author) error {
 	bBk, err := toBsonAuthor(bk)
 	if err != nil {
 		return err
@@ -95,7 +95,7 @@ func (br *bookRepository) AddAuthor(ctx context.Context, bk *author.Author) erro
 }
 
 // Get fetches from repository
-func (br *bookRepository) GetAuthor(ctx context.Context, ID string) (*author.Author, error) {
+func (br *authorRepository) GetAuthor(ctx context.Context, ID string) (*author.Author, error) {
 	if _, err := primitive.ObjectIDFromHex(ID); err != nil {
 		return nil, nil
 	}
@@ -125,7 +125,7 @@ func (br *bookRepository) GetAuthor(ctx context.Context, ID string) (*author.Aut
 }
 
 // Get fetches from repository
-func (br *bookRepository) ListAuthor(ctx context.Context, skip *int64, limit *int64) ([]author.Author, error) {
+func (br *authorRepository) ListAuthor(ctx context.Context, skip *int64, limit *int64) ([]author.Author, error) {
 	rows, err := br.db.Find(context.Background(), br.col, bson.M{}, skip, limit)
 	if err != nil {
 		return nil, err
