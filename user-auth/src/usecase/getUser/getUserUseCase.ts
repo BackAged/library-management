@@ -3,6 +3,7 @@ import { GetUser } from "./port";
 import { UserNotFound } from "./errors";
 
 export interface GetUserUseCaseResponse {
+    id: string,
     name: string,
     age: number,
     gender: string,
@@ -20,6 +21,7 @@ export class GetUserUseCase {
 
     private toGetUserUseCaseResponse(user: User): GetUserUseCaseResponse {
         return {
+            id: user.ID as string,
             name: user.name,
             age: user.age,
             gender: String(user.gender),

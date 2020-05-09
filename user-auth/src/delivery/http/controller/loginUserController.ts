@@ -15,7 +15,7 @@ export class LoginUserController {
     }
 
     private seralize(response: LoginUserUseCaseResponse) {
-        return response;
+        return { data: response };
     }
 
     public async loginUser(req: Request, res: Response) {

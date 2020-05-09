@@ -14,7 +14,7 @@ export class GetUserController {
     }
 
     private seralize(response: GetUserUseCaseResponse) {
-        return response;
+        return {data: response};
     }
 
     public async getUser(req: Request, res: Response) {

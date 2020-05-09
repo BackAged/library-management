@@ -15,7 +15,7 @@ export class RegisterUserController {
     }
 
     private seralize(response: RegisterUserUseCaseResponse) {
-        return response;
+        return { data: response };
     }
 
     public async registerUser(req: Request, res: Response) {

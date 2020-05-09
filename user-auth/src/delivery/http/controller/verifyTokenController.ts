@@ -22,7 +22,7 @@ export class VerifyTokenController {
 
     private seralize(response: GetUserUseCaseResponse) {
         // TODO:-> if serialization needed
-        return response;
+        return { data: response };
     }
 
     public async verifyToken(req: Request, res: Response) {

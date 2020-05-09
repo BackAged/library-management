@@ -14,7 +14,7 @@ export class ListUserController {
     }
 
     private seralize(response: ListUserUseCaseResponse[]) {
-        return response;
+        return { data: response };
     }
 
     public async listUser(req: Request, res: Response) {
