@@ -18,7 +18,7 @@ const (
 func AdminOnly(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		role := r.Header.Get("x-role")
-		fmt.Print(role)
+		fmt.Println(role)
 		if role == "" || role != string(AdminRole) {
 			ServeJSON(http.StatusForbidden, "Un authorized", nil, nil, w)
 			return

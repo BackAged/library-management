@@ -17,7 +17,7 @@ func NewBookLoanRouter(h BookLoanHandler) http.Handler {
 	router.Get("/", h.ListBookLoan)
 	router.Get("/{bookLoanID}", h.GetBookLoan)
 	router.With(AdminOnly).Get("/{bookLoanID}/accept", h.AcceptBookLoan)
-	router.With(AdminOnly).Get("/{bookLoanID}/reject", h.RejectBookLoan)
+	router.With(AdminOnly).Post("/{bookLoanID}/reject", h.RejectBookLoan)
 
 	return router
 }
@@ -46,14 +46,14 @@ type createBookLoanRequest struct {
 }
 
 type createBookLoanReponse struct {
-	ID     string     `json:"id"`
-	BookID string     `json:"book_id"`
-	UserID string     `json:"user_id"`
-	Status LoanStatus `json:"status"`
+	ID     string `json:"id"`
+	BookID string `json:"book_id"`
+	UserID string `json:"user_id"`
+	Status string `json:"status"`
 }
 
-func createBookRequestValidator(r *http.Request) (*createBookRequest, error) {
-	var crtRq createBookRequest
+func createBookLoanRequestValidator(r *http.Request) (*createBookLoanRequest, error) {
+	var crtRq createBookLoanRequest
 	rules := govalidator.MapData{
 		"book_id": []string{"required", "alpha_space"},
 		"user_id": []string{"required", "alpha_space"},
@@ -80,8 +80,8 @@ func createBookRequestValidator(r *http.Request) (*createBookRequest, error) {
 }
 
 // Create handler
-func (h *bkHandler) CreateBookLoan(w http.ResponseWriter, r *http.Request) {
-	crtRq, err := createBookRequestValidator(r)
+func (h *bklnHandler) CreateBookLoan(w http.ResponseWriter, r *http.Request) {
+	crtRq, err := createBookLoanRequestValidator(r)
 	if err != nil {
 		ServeJSON(http.StatusBadRequest, "", nil, err, w)
 		return
@@ -103,9 +103,10 @@ func (h *bkHandler) CreateBookLoan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resBk := &createBookLoanReponse{
+		ID:     bk.ID,
 		BookID: bk.BookID,
 		UserID: bk.UserID,
-		Status: bk.Status,
+		Status: string(bk.Status),
 	}
 	ServeJSON(http.StatusCreated, "", resBk, nil, w)
 }
@@ -114,15 +115,15 @@ type getBookLoanReponse struct {
 	ID             string     `json:"id"`
 	BookID         string     `json:"book_id"`
 	UserID         string     `json:"user_id"`
-	Status         LoanStatus `json:"status"`
+	Status         string     `json:"status"`
 	AcceptedAt     *time.Time `json:"accepted_at,omitempty"`
 	RejectedAt     *time.Time `json:"rejected_at,omitempty"`
 	RejectionCause string     `json:"rejection_cause,omitempty"`
 }
 
 // GetBookLoan handler
-func (h *bkHandler) GetBookLoan(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "bookloanID")
+func (h *bklnHandler) GetBookLoan(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "bookLoanID")
 
 	bk, err := h.bkSvc.Get(r.Context(), id)
 	if err != nil {
@@ -136,9 +137,10 @@ func (h *bkHandler) GetBookLoan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resBk := &getBookLoanReponse{
+		ID:             bk.ID,
 		BookID:         bk.BookID,
 		UserID:         bk.UserID,
-		Status:         bk.Status,
+		Status:         string(bk.Status),
 		AcceptedAt:     bk.AcceptedAt,
 		RejectedAt:     bk.RejectedAt,
 		RejectionCause: bk.RejectionCause,
@@ -150,14 +152,14 @@ type listBookLoanReponse struct {
 	ID             string     `json:"id"`
 	BookID         string     `json:"book_id"`
 	UserID         string     `json:"user_id"`
-	Status         LoanStatus `json:"status"`
+	Status         string     `json:"status"`
 	AcceptedAt     *time.Time `json:"accepted_at,omitempty"`
 	RejectedAt     *time.Time `json:"rejected_at,omitempty"`
 	RejectionCause string     `json:"rejection_cause,omitempty"`
 }
 
 // List handler
-func (h *bkHandler) ListBookLoan(w http.ResponseWriter, r *http.Request) {
+func (h *bklnHandler) ListBookLoan(w http.ResponseWriter, r *http.Request) {
 	v, err := ParseSkipLimit(r)
 	if err != nil {
 		ServeJSON(http.StatusBadRequest, "", nil, err, w)
@@ -176,12 +178,13 @@ func (h *bkHandler) ListBookLoan(w http.ResponseWriter, r *http.Request) {
 	resBks := []listBookLoanReponse{}
 	for _, b := range bk {
 		resBk := listBookLoanReponse{
-			BookID:         bk.BookID,
-			UserID:         bk.UserID,
-			Status:         bk.Status,
-			AcceptedAt:     bk.AcceptedAt,
-			RejectedAt:     bk.RejectedAt,
-			RejectionCause: bk.RejectionCause,
+			ID:             b.ID,
+			BookID:         b.BookID,
+			UserID:         b.UserID,
+			Status:         string(b.Status),
+			AcceptedAt:     b.AcceptedAt,
+			RejectedAt:     b.RejectedAt,
+			RejectionCause: b.RejectionCause,
 		}
 		resBks = append(resBks, resBk)
 	}
@@ -190,10 +193,10 @@ func (h *bkHandler) ListBookLoan(w http.ResponseWriter, r *http.Request) {
 }
 
 // List handler
-func (h *bkHandler) AcceptBookLoan(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "bookloanID")
+func (h *bklnHandler) AcceptBookLoan(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "bookLoanID")
 
-	bk, err := h.bkSvc.AcceptBookLoan(r.Context(), id)
+	err := h.bkSvc.Accept(r.Context(), id)
 	if err != nil {
 		switch v := err.(type) {
 		case *bookloan.NotFound:
@@ -207,11 +210,47 @@ func (h *bkHandler) AcceptBookLoan(w http.ResponseWriter, r *http.Request) {
 	ServeJSON(http.StatusCreated, "book loan was accepted", nil, nil, w)
 }
 
-// List handler
-func (h *bkHandler) RejectBookLoan(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "bookloanID")
+type rejectBookLoanRequest struct {
+	RejectionCause string `json:"rejection_cause"`
+}
 
-	bk, err := h.bkSvc.RejectBookLoan(r.Context(), id)
+func rejectBookLoanRequestValidator(r *http.Request) (*rejectBookLoanRequest, error) {
+	var crtRq rejectBookLoanRequest
+	rules := govalidator.MapData{
+		"rejection_cause": []string{"required", "alpha_space"},
+	}
+
+	opts := govalidator.Options{
+		Request: r,
+		Data:    &crtRq,
+		Rules:   rules,
+	}
+
+	v := govalidator.New(opts)
+	err := v.ValidateJSON()
+	if len(err) == 0 {
+		return &crtRq, nil
+	}
+
+	ve := &ValidationError{}
+	for k, v := range err {
+		ve.Add(k, v)
+	}
+
+	return nil, ve
+}
+
+// List handler
+func (h *bklnHandler) RejectBookLoan(w http.ResponseWriter, r *http.Request) {
+	crtRq, err := rejectBookLoanRequestValidator(r)
+	if err != nil {
+		ServeJSON(http.StatusBadRequest, "", nil, err, w)
+		return
+	}
+
+	id := chi.URLParam(r, "bookLoanID")
+
+	err = h.bkSvc.Reject(r.Context(), id, crtRq.RejectionCause)
 	if err != nil {
 		switch v := err.(type) {
 		case *bookloan.NotFound:

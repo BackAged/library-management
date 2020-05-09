@@ -9,9 +9,10 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/BackAged/library-management/libray/configuration"
+	"github.com/BackAged/library-management/library/configuration"
 	"github.com/BackAged/library-management/library/domain/bookloan"
-	"github.com/BackAged/library-management/libray/infrastructure/repository"
+	"github.com/BackAged/library-management/library/infrastructure/database"
+	"github.com/BackAged/library-management/library/infrastructure/repository"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 )
@@ -31,9 +32,9 @@ func Serve(cfgPath string) error {
 		return err
 	}
 
-	bkRepo := repository.N(rds, "book_loans")
+	bkRepo := repository.NewBookLoanRepository(rds, "book_loans")
 
-	bkSvc := bookloan.NewService(bkRepo, athrRepo)
+	bkSvc := bookloan.NewService(bkRepo)
 
 	bkHndlr := NewBookLoanHandler(bkSvc)
 

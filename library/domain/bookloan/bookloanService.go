@@ -17,6 +17,8 @@ func NewService(r Repository) Service {
 }
 
 func (s *service) Create(ctx context.Context, bl *BookLoan) error {
+	bl.Status = BookLoanInitiated
+
 	if err := s.repository.AddBookLoan(ctx, bl); err != nil {
 		return err
 	}
@@ -46,44 +48,49 @@ func (s *service) List(ctx context.Context, skip *int64, limit *int64) ([]BookLo
 }
 
 func (s *service) ListByUser(ctx context.Context, userID string, skip *int64, limit *int64) ([]BookLoan, error) {
-	bls, err := s.repository.ListBookLoanByUserID(ctx, authorID, skip, limit)
+	bls, err := s.repository.ListBookLoanByUserID(ctx, userID, skip, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	return bks, nil
+	return bls, nil
 }
 
-func (s *service) Accept(context.Context, ID string) error {
+func (s *service) Accept(ctx context.Context, ID string) error {
 	bl, err := s.repository.GetBookLoan(ctx, ID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if bl == nil {
-		return nil, NewBookLoanNotFound("BookLoan not found", []string{})
+		return NewBookLoanNotFound("BookLoan not found", []string{})
 	}
 
+	now := time.Now()
+
 	bl.Status = BookLoanAccepted
-	bl.AcceptedAt = &time.Time{}
-	err := s.repository.UpdateBookLoan(ctx, ID, bl)
+	bl.AcceptedAt = &now
+
+	err = s.repository.UpdateBookLoan(ctx, ID, bl)
 
 	return err
 }
 
-func (s *service) Reject(context.Context, ID string, rejectionCause string) error {
+func (s *service) Reject(ctx context.Context, ID string, rejectionCause string) error {
 	bl, err := s.repository.GetBookLoan(ctx, ID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if bl == nil {
-		return nil, NewBookLoanNotFound("BookLoan not found", []string{})
+		return NewBookLoanNotFound("BookLoan not found", []string{})
 	}
+
+	now := time.Now()
 
 	bl.Status = BookLoanRejected
 	bl.RejectionCause = rejectionCause
-	bl.RejectedAt = &time.Time{}
+	bl.RejectedAt = &now
 
-	err := s.repository.UpdateBookLoan(ctx, ID, bl)
+	err = s.repository.UpdateBookLoan(ctx, ID, bl)
 
 	return err
 }

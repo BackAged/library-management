@@ -3,10 +3,11 @@ package repository
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
-	"github.com/BackAged/library-management/library/infrastructure/database"
 	"github.com/BackAged/library-management/library/domain/bookloan"
+	"github.com/BackAged/library-management/library/infrastructure/database"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -17,7 +18,7 @@ type bsonBookLoan struct {
 	ID             primitive.ObjectID `bson:"_id"`
 	BookID         string             `bson:"book_id"`
 	UserID         string             `bson:"user_id"`
-	Status string`bson:"status"`
+	Status         string             `bson:"status"`
 	AcceptedAt     *time.Time         `bson:"accepted_at"`
 	RejectedAt     *time.Time         `bson:"rejected_at"`
 	RejectionCause string             `bson:"rejection_cause"`
@@ -33,7 +34,7 @@ func toBsonBookLoan(bl *bookloan.BookLoan) (*bsonBookLoan, error) {
 	bBl := bsonBookLoan{
 		BookID:         bl.BookID,
 		UserID:         bl.UserID,
-		Status: bl.Status,
+		Status:         string(bl.Status),
 		AcceptedAt:     bl.AcceptedAt,
 		RejectedAt:     bl.RejectedAt,
 		RejectionCause: bl.RejectionCause,
@@ -42,7 +43,7 @@ func toBsonBookLoan(bl *bookloan.BookLoan) (*bsonBookLoan, error) {
 	}
 
 	if bl.ID != "" {
-		id, err := primitive.ObjectIDFromHex(bk.ID)
+		id, err := primitive.ObjectIDFromHex(bl.ID)
 		if err != nil {
 			return nil, errors.New("invalid id")
 		}
@@ -56,7 +57,7 @@ func toModelBookLoan(bl *bsonBookLoan) *bookloan.BookLoan {
 		ID:             bl.ID.Hex(),
 		BookID:         bl.BookID,
 		UserID:         bl.UserID,
-		Status: bl.Status,
+		Status:         bookloan.LoanStatus(bl.Status),
 		AcceptedAt:     bl.AcceptedAt,
 		RejectedAt:     bl.RejectedAt,
 		RejectionCause: bl.RejectionCause,
@@ -79,7 +80,7 @@ func NewBookLoanRepository(client *database.Client, col string) bookloan.Reposit
 }
 
 // AddBookLoan adds into repository
-func (br *bookLoanRepository) AddBookLoan(ctx context.Context, bk *bsonBookLoan.BookLoan) error {
+func (br *bookLoanRepository) AddBookLoan(ctx context.Context, bk *bookloan.BookLoan) error {
 	bBl, err := toBsonBookLoan(bk)
 	if err != nil {
 		return err
@@ -107,7 +108,7 @@ func (br *bookLoanRepository) AddBookLoan(ctx context.Context, bk *bsonBookLoan.
 }
 
 // GetBookLoan fetches from repository
-func (br *bookLoanRepository) GetBookLoan(ctx context.Context, ID string) (*bsonBookLoan.BookLoan, error) {
+func (br *bookLoanRepository) GetBookLoan(ctx context.Context, ID string) (*bookloan.BookLoan, error) {
 	if _, err := primitive.ObjectIDFromHex(ID); err != nil {
 		return nil, nil
 	}
@@ -137,7 +138,7 @@ func (br *bookLoanRepository) GetBookLoan(ctx context.Context, ID string) (*bson
 }
 
 // ListBookLoan fetches from repository
-func (br *bookLoanRepository) ListBookLoan(ctx context.Context, skip *int64, limit *int64) ([]bsonBookLoan.BookLoan, error) {
+func (br *bookLoanRepository) ListBookLoan(ctx context.Context, skip *int64, limit *int64) ([]bookloan.BookLoan, error) {
 	rows, err := br.db.Find(context.Background(), br.col, bson.M{}, skip, limit)
 	if err != nil {
 		return nil, err
@@ -174,10 +175,10 @@ func (br *bookLoanRepository) ListBookLoanByUserID(ctx context.Context, userID s
 	bBls := []bookloan.BookLoan{}
 	for rows.Next() {
 		bBl := bsonBookLoan{}
-		if err := rows.Scan(&bBk); err != nil {
+		if err := rows.Scan(&bBl); err != nil {
 			return nil, err
 		}
-		bBls = append(bBls, *toModelBookLoan(&bBk))
+		bBls = append(bBls, *toModelBookLoan(&bBl))
 
 	}
 	if rows.Err(); err != nil {
@@ -187,29 +188,37 @@ func (br *bookLoanRepository) ListBookLoanByUserID(ctx context.Context, userID s
 	return bBls, nil
 }
 
-func (br *bookLoanRepository) UpdateBookLoan(context.Context, ID string, bl *BookLoan) error {
-	if _, err := primitive.ObjectIDFromHex(ID); err != nil {
+func (br *bookLoanRepository) UpdateBookLoan(ctx context.Context, ID string, bl *bookloan.BookLoan) error {
+	objID, err := primitive.ObjectIDFromHex(ID)
+	if err != nil {
 		return nil
 	}
 
 	f := bson.M{
-		"_id": ID,
+		"_id": objID,
 	}
+
+	now := time.Now()
 
 	u := bson.M{
-		BookID:         bl.BookID,
-		UserID:         bl.UserID,
-		AcceptedAt:     bl.AcceptedAt,
-		RejectedAt:     bl.RejectedAt,
-		RejectionCause: bl.RejectionCause,
-		CreatedAt:      bl.CreatedAt,
-		UpdatedAt:      bl.UpdatedAt,
+		"$set": bson.M{
+			"book_id":         bl.BookID,
+			"user_id":         bl.UserID,
+			"status":          string(bl.Status),
+			"accepted_at":     bl.AcceptedAt,
+			"rejected_at":     bl.RejectedAt,
+			"rejection_cause": bl.RejectionCause,
+			"created_at":      bl.CreatedAt,
+			"updated_at":      &now,
+		},
 	}
 
-	r, err := br.db.UpdateOne(context.Background(), br.col, f, u)
+	res, err := br.db.UpdateOne(context.Background(), br.col, f, u)
 	if err != nil {
 		return err
 	}
-	
+
+	fmt.Println(res)
+
 	return nil
 }
