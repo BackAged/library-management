@@ -28,5 +28,5 @@ process.on("SIGTERM", gracefulShutdown(server, config.APP_FORCE_SHUTDOWN_SECOND)
 process.on("SIGINT", gracefulShutdown(server, config.APP_FORCE_SHUTDOWN_SECOND));
 
 server.listen(config.APPLICATION_SERVER_PORT, () => {
-    logger.log("USER AUTH SERVICE IS RUNNING: " + config.APPLICATION_SERVER_PORT);
+    logger.log("API-GATEWAY IS RUNNING: " + config.APPLICATION_SERVER_PORT);
 });

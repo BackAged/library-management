@@ -7,9 +7,9 @@ interface Config {
 }
 
 const config: Config = {
-    USER_AUTH_URL: "http://localhost:3000",
-    BOOK_URL: "http://localhost:3001",
-    LIBRARY_URL: "",
+    USER_AUTH_URL: process.env.USER_AUTH_URL || "http://localhost:3000",
+    BOOK_URL:  process.env.BOOK_URL || "http://localhost:3001",
+    LIBRARY_URL: process.env.LIBRARY_URL || "http://localhost:3002",
     APPLICATION_SERVER_PORT: Number(process.env.APPLICATION_SERVER_PORT) || 8000,
     APP_FORCE_SHUTDOWN_SECOND: Number(process.env.APP_FORCE_SHUTDOWN_SECOND) || 30,
 };
