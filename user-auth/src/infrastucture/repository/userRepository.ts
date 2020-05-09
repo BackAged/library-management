@@ -25,6 +25,7 @@ export class UserRepository implements RegisterUserContext, GetUser, DeleteUser,
             email: user.email,
             phone: user.phone,
             password: user.password,
+            role: user.role,
         }
     }
 

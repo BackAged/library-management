@@ -8,6 +8,7 @@ export interface GetUserUseCaseResponse {
     gender: string,
     email: string,
     phone?: string,
+    role: string,
 }
 
 export class GetUserUseCase {
@@ -24,6 +25,7 @@ export class GetUserUseCase {
             gender: String(user.gender),
             email: user.email,
             phone: user.phone,
+            role: user.role,
         }
     }
 

@@ -5,6 +5,11 @@ export enum Gender {
     Female = "Female",
 }
 
+export enum Role {
+    Admin = "Admin",
+    Member = "Member"
+}
+
 // UserProps holds User domain data
 interface UserProps {
     ID?: string;
@@ -14,6 +19,7 @@ interface UserProps {
     email:string; 
     phone?: string;
     password: string;
+    role?: Role;
 }
 
 
@@ -25,6 +31,7 @@ export class User {
     private _email: string;
     private _phone?: string;
     private _password: string;
+    private _role: Role;
 
     private constructor(userData: UserProps) {
         this._name = userData.name;
@@ -34,6 +41,7 @@ export class User {
         this._phone = userData.phone;
         this._password = userData.password;
         this._ID = userData.ID;
+        this._role = userData.role ? userData.role : Role.Member;
     }
 
     private static isValid(userData: UserProps): string[] {
@@ -57,6 +65,10 @@ export class User {
 
         if (!userData.password || userData.password.length <= 2 || userData.password.length >= 10) {
             errors.push("Invalid password");
+        }
+
+        if (userData.role != Role.Member && userData.role != Role.Admin) {
+            errors.push("Invalid Role");
         }
         
         console.log(errors);
@@ -108,6 +120,10 @@ export class User {
 
     get password(): string {
         return this._password;
+    }
+
+    get role(): Role | string {
+        return this._role;
     }
 
     private static hasPassword(plainPassword: string): string{
