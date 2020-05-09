@@ -11,7 +11,7 @@ import (
 // NewBookRouter contains all routes for books service.
 func NewBookRouter(h BookHandler) http.Handler {
 	router := chi.NewRouter()
-	router.Post("/create", h.CreateBook)
+	router.With(AdminOnly).Post("/create", h.CreateBook)
 	router.Get("/", h.ListBook)
 	router.Get("/{bookID}", h.GetBook)
 	router.Get("/author/{authorID}", h.ListBookByAuthor)
@@ -145,7 +145,7 @@ func (h *bkHandler) GetBook(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch v := err.(type) {
 		case *book.NotFound:
-			ServeJSON(http.StatusInternalServerError, v.GetMessage(), nil, v.GetErrors(), w)
+			ServeJSON(http.StatusBadRequest, v.GetMessage(), nil, v.GetErrors(), w)
 		default:
 			ServeJSON(http.StatusInternalServerError, "Something went wrong", nil, nil, w)
 		}

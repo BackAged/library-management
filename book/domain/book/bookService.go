@@ -29,7 +29,7 @@ func (s *service) Create(ctx context.Context, bk *Book) error {
 	}
 
 	// TODO:-> check ISBN uniqueness
-	
+
 	bk.AuthorName = athr.AuthorName
 
 	if err := s.repository.AddBook(ctx, bk); err != nil {

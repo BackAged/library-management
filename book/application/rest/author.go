@@ -12,7 +12,7 @@ import (
 // NewAuthorRouter contains all routes for author service.
 func NewAuthorRouter(h AuthorHandler) http.Handler {
 	router := chi.NewRouter()
-	router.Post("/create", h.CreateAuthor)
+	router.With(AdminOnly).Post("/create", h.CreateAuthor)
 	router.Get("/", h.ListAuthor)
 	router.Get("/{authorID}", h.GetAuthor)
 
@@ -114,7 +114,7 @@ func (h *athrHandler) GetAuthor(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch v := err.(type) {
 		case *author.NotFound:
-			ServeJSON(http.StatusInternalServerError, v.GetMessage(), nil, v.GetErrors(), w)
+			ServeJSON(http.StatusBadRequest, v.GetMessage(), nil, v.GetErrors(), w)
 		default:
 			ServeJSON(http.StatusInternalServerError, "Something went wrong", nil, nil, w)
 		}
