@@ -56,7 +56,6 @@ func createBookLoanRequestValidator(r *http.Request) (*createBookLoanRequest, er
 	var crtRq createBookLoanRequest
 	rules := govalidator.MapData{
 		"book_id": []string{"required", "alpha_space"},
-		"user_id": []string{"required", "alpha_space"},
 	}
 
 	opts := govalidator.Options{
@@ -82,6 +81,11 @@ func createBookLoanRequestValidator(r *http.Request) (*createBookLoanRequest, er
 // Create handler
 func (h *bklnHandler) CreateBookLoan(w http.ResponseWriter, r *http.Request) {
 	crtRq, err := createBookLoanRequestValidator(r)
+	userID := r.Header.Get("x-userid")
+	if userID == "" {
+		ServeJSON(http.StatusForbidden, "Un authorized", nil, nil, w)
+		return
+	}
 	if err != nil {
 		ServeJSON(http.StatusBadRequest, "", nil, err, w)
 		return
@@ -89,7 +93,7 @@ func (h *bklnHandler) CreateBookLoan(w http.ResponseWriter, r *http.Request) {
 
 	bk := &bookloan.BookLoan{
 		BookID: crtRq.BookID,
-		UserID: crtRq.UserID,
+		UserID: userID,
 	}
 
 	if err := h.bkSvc.Create(r.Context(), bk); err != nil {
