@@ -15,6 +15,8 @@ import { newGetUserController } from "./controller/getUserController";
 import { newGetUserUseCase } from "../../usecase/getUser/getUserUseCase";
 import { newListUserUseCase } from "../../usecase/listUser/listUserUseCase";
 import { newListUserController } from "./controller/listUserController";
+import { newVerifyTokenController } from "./controller/verifyTokenController";
+import { adminOnly } from "./middleware/adminOnly";
 
 
 const app = express();
@@ -25,7 +27,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // bootstrapping the application
 (async () => {
-    // initialize logger
+    // initialize logger TODO:->
 
     // initializing db connection
     const db = await initializeDBConnection(config.MONGO.MONGO_HOST, config.MONGO.MONGO_DB);
@@ -43,6 +45,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
     // initializing controllers
     const registerUserController = await newRegisterUserController(registerUserUseCase);
     const loginUserController = await newLoginUserController(loginUserUseCase);
+    const verifyTokenController = await newVerifyTokenController(getUserUseCase, jsonWebTokenManager);
 
     const getUserController = await newGetUserController(getUserUseCase);
     const listUserController = await newListUserController(listUserUseCase);
@@ -51,11 +54,12 @@ app.use(bodyParser.urlencoded({ extended: true }));
     const authRouter = Router();
     authRouter.post("/register", registerUserController.registerUser);
     authRouter.post("/login", loginUserController.loginUser);
+    authRouter.get("/verify-token", verifyTokenController.verifyToken);
     app.use("/api/v1/auth", authRouter);
 
     const userRouter = Router();
     userRouter.get("/:user_id", getUserController.getUser);
-    userRouter.get("/", listUserController.listUser);
+    userRouter.get("/",adminOnly, listUserController.listUser);
     app.use("/api/v1/user", userRouter);
 
 })();
