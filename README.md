@@ -14,7 +14,8 @@
     - library service maintains book loans
 
 
-###### Request flow => client -> api-gateway -> user-auth(authentication & authorization) -> proxy to other service
+###### Request flow => client -> api-gateway -> user-auth(authentication & authorization)
+######                                       -> proxy to other service (with appropriate authorization information)
 ###### TODO => 
     1.Improve excel export by using worker process to generate excel and generate at timeinterval ex-hourly, 
     save the file and serve that saved file, NOT ON REQUEST TRANSACTION
