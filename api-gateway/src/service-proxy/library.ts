@@ -7,5 +7,6 @@ export const LIBRARY_URLS = {
     bookLoanDetails: (param: string) => `${BaseURL}/api/v1/book-loan/${param}`,
     listBookLoan: `${BaseURL}/api/v1/book-loan`,
     bookLoanAccept:(param: string) => `${BaseURL}/api/v1/book-loan/${param}/accept`,
-    bookLoanReject : (param: string) => `${BaseURL}/api/v1/book-loan/${param}/reject`
+    bookLoanReject : (param: string) => `${BaseURL}/api/v1/book-loan/${param}/reject`,
+    bookLoanExcelExport: `${BaseURL}/api/v1/book-loan/export`
 }

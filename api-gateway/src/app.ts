@@ -91,4 +91,8 @@ app.post("/api/v1/book-loan/:bookID/reject", Authenticated, async (req, res) : P
     proxy.web(req, res, { target: LIBRARY_URLS.bookLoanAccept(req.params.authorID), prependPath: false});
 });
 
+app.get("/api/v1/book-loan/export", async (req, res) : Promise<any> => {
+    proxy.web(req, res, { target: LIBRARY_URLS.bookLoanExcelExport, prependPath: false});
+});
+
 export default app;
