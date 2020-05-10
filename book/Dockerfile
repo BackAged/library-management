@@ -32,4 +32,4 @@ COPY --from=builder /go/bin/book /usr/local/bin/book
 
 EXPOSE 8000
 
-ENTRYPOINT ["go-hexa"]
+ENTRYPOINT ["book"]

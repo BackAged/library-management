@@ -1,7 +1,7 @@
 host: ""
 port: 3002
 mongo:
-  uri: "mongodb://localhost:27017"
+  uri: "mongodb://mongo:27017"
   database: "library"
 redis:
   host: "redis:6379"

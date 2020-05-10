@@ -1,30 +1,20 @@
 version: "3"
 services:
-  # api-gateway:
-  #   container_name: api-gateway
-  #   build:
-  #     dockerfile: Dockerfile.dev
-  #     context: .
-  #   depends_on:
-  #     - mongo
-  #     - redis
-  #     - mq
-  #   ports:
-  #     - "3000:3000"
-  #   volumes:
-  #     - .:/server
-  #   environment:
-  #     - MONGO_HOST=mongodb://db:27017
-  #     - RABBIT_HOST=amqp://root:root@mq:5672
-  #     - MONGO_DB=blah
-  #     - APPLICATION_SERVER_PORT=3000
-  #     - APP_FORCE_SHUTDOWN_SECOND=30
-  #     - API_KEY=abcd
-  #     #- DATABASE_URL=blah
-  #     - MYSQL_HOST=blah
-  #     - MYSQL_USER=blah
-  #     - MYSQL_PASSWORD=blah
-  #     - MYSQL_DATABASE=blah
+  api-gateway:
+    container_name: library-management-api-gateway
+    build: 
+        dockerfile: Dockerfile
+        context: ./api-gateway
+    depends_on: 
+        - mongo
+    ports:
+      - "3000:8000"
+    environment: 
+      - USER_AUTH_URL=user_auth:3001,
+      - BOOK_URL=book:3002,
+      - LIBRARY_URL=library:3003,
+      - APPLICATION_SERVER_PORT=8000
+      - APP_FORCE_SHUTDOWN_SECOND=30
 
   user-auth:
     container_name: library-management-user-auth
@@ -34,13 +24,39 @@ services:
     depends_on: 
         - mongo
     ports:
-      - "30001:30001"
+      - "3001:8000"
     environment: 
       - MONGO_HOST=mongodb://mongo:27017
       - MONGO_DB=user_auth
-      - APPLICATION_SERVER_PORT=30001
+      - APPLICATION_SERVER_PORT=8000
       - APP_FORCE_SHUTDOWN_SECOND=30
 
+  book:
+    container_name: library-management-book
+    build: 
+        dockerfile: Dockerfile
+        context: ./book
+    depends_on: 
+        - mongo
+    ports:
+      - "3002:8000"
+    command: serve-rest -c "/etc/config.yaml"
+    volumes:
+      - ./book/config.yaml:/etc/config.yaml
+
+  library:
+    container_name: library-management-library
+    build: 
+        dockerfile: Dockerfile
+        context: ./library
+    depends_on: 
+        - mongo
+    ports:
+      - "3003:8000"
+    command: serve-rest -c "/etc/config.yaml"
+    volumes:
+      - ./library/config.yaml:/etc/config.yaml
+  
   # mongo Server
   mongo:
     container_name: library-management-mongo
@@ -57,15 +73,3 @@ services:
     restart: always
     ports: 
       - "6379:6379"
-
-  # rabbitmq server Server
-  # mq:
-  #   container_name: library-management-rabbitmq
-  #   image: 'rabbitmq:3.6-management-alpine'
-  #   environment:
-  #       RABBITMQ_ERLANG_COOKIE: ${RABBITMQ_ERLANG_COOKIE}
-  #       RABBITMQ_DEFAULT_USER: root
-  #       RABBITMQ_DEFAULT_PASS: root
-  #   ports:
-  #     - "5672:5672"
-  #     - "15672:15672"

@@ -27,7 +27,7 @@ RUN yarn install && yarn cache clean --force
 COPY --from=builder /home/node/app/dist .
 
 # Expose ports (for orchestrators and dynamic reverse proxies)
-EXPOSE ${PORT}
+EXPOSE 8000
 
 # Start the app
 CMD ["node", "server.js"]
