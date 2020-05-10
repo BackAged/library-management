@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/BackAged/library-management/book/domain/book"
 	"github.com/BackAged/library-management/library/domain/bookloan"
 	"github.com/go-chi/chi"
@@ -18,6 +19,7 @@ func NewBookLoanRouter(h BookLoanHandler) http.Handler {
 	router.Get("/{bookLoanID}", h.GetBookLoan)
 	router.With(AdminOnly).Get("/{bookLoanID}/accept", h.AcceptBookLoan)
 	router.With(AdminOnly).Post("/{bookLoanID}/reject", h.RejectBookLoan)
+	router.With(AdminOnly).Get("/export", h.ExportBookLoanExcel)
 
 	return router
 }
@@ -29,6 +31,7 @@ type BookLoanHandler interface {
 	ListBookLoan(http.ResponseWriter, *http.Request)
 	AcceptBookLoan(http.ResponseWriter, *http.Request)
 	RejectBookLoan(http.ResponseWriter, *http.Request)
+	ExportBookLoanExcel(http.ResponseWriter, *http.Request)
 }
 
 type bklnHandler struct {
@@ -266,4 +269,60 @@ func (h *bklnHandler) RejectBookLoan(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ServeJSON(http.StatusCreated, "book loan was rejected", nil, nil, w)
+}
+
+// TODO-> needs serious improvements
+func (h *bklnHandler) ExportBookLoanExcel(w http.ResponseWriter, r *http.Request) {
+	f := excelize.NewFile()
+	index := f.NewSheet("Sheet2")
+
+	f.SetCellValue("Sheet2", "A1", "NO")
+	f.SetCellValue("Sheet2", "B1", "BOOK_ID")
+	f.SetCellValue("Sheet2", "C1", "USER_ID")
+	f.SetCellValue("Sheet2", "D1", "STATUS")
+	f.SetCellValue("Sheet2", "E1", "ACCEPTED_AT")
+	f.SetCellValue("Sheet2", "F1", "REJECTED_AT")
+	f.SetCellValue("Sheet2", "G1", "REJECTION_CAUSE")
+
+	skip := int64(0)
+	limit := int64(1000)
+
+	var bl []bookloan.BookLoan
+	var err error
+	total := 1
+	for {
+		bl, err = h.bkSvc.List(r.Context(), &skip, &limit)
+		if len(bl) == 0 || err != nil {
+			print(err)
+			break
+		}
+
+		for _, v := range bl {
+			total++
+			ID, _ := excelize.CoordinatesToCellName(1, total)
+			bookID, _ := excelize.CoordinatesToCellName(2, total)
+			userID, _ := excelize.CoordinatesToCellName(3, total)
+			status, _ := excelize.CoordinatesToCellName(4, total)
+			acceptedAt, _ := excelize.CoordinatesToCellName(5, total)
+			rejectedAt, _ := excelize.CoordinatesToCellName(6, total)
+			rejectionCause, _ := excelize.CoordinatesToCellName(7, total)
+
+			f.SetCellValue("Sheet2", ID, v.ID)
+			f.SetCellValue("Sheet2", bookID, v.BookID)
+			f.SetCellValue("Sheet2", userID, v.UserID)
+			f.SetCellValue("Sheet2", status, string(v.Status))
+			f.SetCellValue("Sheet2", acceptedAt, v.AcceptedAt)
+			f.SetCellValue("Sheet2", rejectedAt, v.RejectedAt)
+			f.SetCellValue("Sheet2", rejectionCause, v.RejectionCause)
+
+			skip = int64(total)
+		}
+	}
+
+	f.SetActiveSheet(index)
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", "attachment; filename=book_loan.xlsx")
+	w.Header().Set("Content-Transfer-Encoding", "binary")
+	f.Write(w)
 }
